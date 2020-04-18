@@ -7,6 +7,8 @@ def exit(err):
     print(err)
     sys.exit()
 
+# read csv file by path, filename
+# code for save data will be add later
 def read_file(path, filename):
     with open(os.path.join(path,filename),'r') as fp:
         reader=csv.reader(fp)
@@ -27,7 +29,13 @@ def read_csv_kw(car_type, attack_type):
     for file in file_list:
         if attack_type in file:
             read_file(path,file)
+            break
 
 
 if __name__ == "__main__":
-    read_csv_kw("Sonata","Fuzzy")
+    car=["Sonata","Soul","Spark"]
+    attack=["Flooding","Fuzzy","Malfunction"]
+    for xx in car:
+        for yy in attack:
+            print(xx+" "+yy)
+            read_csv_kw(xx,yy)
