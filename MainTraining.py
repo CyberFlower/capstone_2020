@@ -73,7 +73,9 @@ def read_file(path, filename):
                     data *= 0x100
                     data += int(row[idx], 16)
 
-                timestamp = float(row[0])
+                # timestamp = float(row[0])
+                timestamp = int(float(row[0]) * 1000000)
+                    # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                 canid = int(row[1], 16)
                 if row[3 + datalen] == 'R':
                     flag = 0
@@ -128,10 +130,9 @@ if __name__ == "__main__":
             #     'packet_data': [],
             #     'packet_flag': []
             # }
-            # 추후 초기화 부분 디버깅 필
+            # 추후 초기화 부분 디버깅 필요
 
     dataset = pd.DataFrame(packet)
-
 
 
 
