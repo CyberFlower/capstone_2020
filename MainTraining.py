@@ -8,7 +8,9 @@ import pandas as pd # for data analytics
 import numpy as np # for numerical computation
 from matplotlib import pyplot as plt, style # for ploting
 import seaborn as sns # for ploting
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix # for evaluation
+from scipy.stats import multivariate_normal
 import itertools
 import missingno as msno
 
@@ -43,11 +45,11 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 
 
 packet = {
-    'packet_timestamp': [],
-    'packet_canid': [],
-    'packet_datalen': [],
-    'packet_data': [],
-    'packet_flag': []
+    'timestamp': [],
+    'canid': [],
+    'datalen': [],
+    'data': [],
+    'flag': []
 }
 # 여기까지
 
@@ -74,7 +76,7 @@ def read_file(path, filename):
                     data += int(row[idx], 16)
 
                 # timestamp = float(row[0])
-                timestamp = int(float(row[0]) * 1000000)
+                timestamp = int(float(row[0]) * 1000000) % 1000000
                     # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                 canid = int(row[1], 16)
                 if row[3 + datalen] == 'R':
@@ -86,11 +88,11 @@ def read_file(path, filename):
 
                 # timestamp, CANID, datalen, data, flag must be saved
 
-                packet['packet_timestamp'].append(timestamp)
-                packet['packet_canid'].append(canid)
-                packet['packet_datalen'].append(datalen)
-                packet['packet_data'].append(data)
-                packet['packet_flag'].append(flag)
+                packet['timestamp'].append(timestamp)
+                packet['canid'].append(canid)
+                packet['datalen'].append(datalen)
+                packet['data'].append(data)
+                packet['flag'].append(flag)
 
             else:
                 exit("csv read error")
@@ -124,19 +126,71 @@ if __name__ == "__main__":
             # 여기에서 실행하고 반복문 끝무렵 초기화
             # packet.clear()
             # packet = {
-            #     'packet_timestamp': [],
-            #     'packet_canid': [],
-            #     'packet_datalen': [],
-            #     'packet_data': [],
-            #     'packet_flag': []
+            #     'timestamp': [],
+            #     'canid': [],
+            #     'datalen': [],
+            #     'data': [],
+            #     'flag': []
             # }
             # 추후 초기화 부분 디버깅 필요
 
     dataset = pd.DataFrame(packet)
+    dataset['timestamp'] = np.log(dataset['timestamp'] + 1)
+    dataset['canid'] = np.log(dataset['canid'] + 1)
+    dataset['data'] = np.log(dataset['data'] + 1)
 
+    normal = dataset[dataset['flag'] == 0]
+    abnormal = dataset[dataset['flag'] == 1]
 
+    train, normal_test, _, _ = train_test_split(normal, normal, test_size=.2, random_state=42)
 
+    normal_valid, normal_test, _, _ = train_test_split(normal_test, normal_test, test_size=.5, random_state=42)
+    abnormal_valid, abnormal_test, _, _ = train_test_split(abnormal, abnormal, test_size=.5, random_state=42)
 
+    train = train.reset_index(drop=True)
+    valid = normal_valid.append(abnormal_valid).sample(frac=1).reset_index(drop=True)
+    test = normal_test.append(abnormal_test).sample(frac=1).reset_index(drop=True)
 
+    # print('Train shape: ', train.shape)
+    # print('Proportion os anomaly in training set: %.2f\n' % train['flag'].mean())
+    # print('Valid shape: ', valid.shape)
+    # print('Proportion os anomaly in validation set: %.2f\n' % valid['flag'].mean())
+    # print('Test shape:, ', test.shape)
+    # print('Proportion os anomaly in test set: %.2f\n' % test['flag'].mean())
 
-    
+    mu = train.drop('flag', axis=1).mean(axis=0).values
+    sigma = train.drop('flag', axis=1).cov().values
+    model = multivariate_normal(cov=sigma, mean=mu, allow_singular=True)
+
+    # print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
+    # print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
+
+    tresholds = np.linspace(-20, -5, 10000)
+    scores = []
+    for treshold in tresholds:
+        y_hat = (model.logpdf(valid.drop('flag', axis=1).values) < treshold).astype(int)
+        scores.append([recall_score(y_pred=y_hat, y_true=valid['flag'].values),
+                       precision_score(y_pred=y_hat, y_true=valid['flag'].values),
+                       fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
+
+    scores = np.array(scores)
+    print(scores[:, 2].max(), scores[:, 2].argmax())
+
+    plt.plot(tresholds, scores[:, 0], label='$Recall$')
+    plt.plot(tresholds, scores[:, 1], label='$Precision$')
+    plt.plot(tresholds, scores[:, 2], label='$F_1$')
+    plt.ylabel('Score')
+    plt.xlabel('Threshold')
+    plt.legend(loc='best')
+    plt.show()
+
+    final_tresh = tresholds[scores[:, 2].argmax()]
+    y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
+
+    print('Final threshold: %d' % final_tresh)
+    print('Test Recall Score: %.3f' % recall_score(y_pred=y_hat_test, y_true=test['flag'].values))
+    print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
+    print('Test F2 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=2))
+
+    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
