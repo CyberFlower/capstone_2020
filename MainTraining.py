@@ -65,9 +65,12 @@ def read_file(path, filename):
     with open(os.path.join(path, filename), 'r') as fp:
         reader = csv.reader(fp)
         cnt = 0
+        before_timestamp = 0
 
         for row in reader:
             if row[-1] == 'R' or row[-1] == 'T':
+                if cnt == 0:
+                    before_timestamp = float(row[0])
                 cnt += 1
                 datalen = int(row[2])
                 data = 0
@@ -76,7 +79,7 @@ def read_file(path, filename):
                     data += int(row[idx], 16)
 
                 # timestamp = float(row[0])
-                timestamp = int(float(row[0]) * 1000000) % 1000000
+                timestamp = int(float(row[0]) - before_timestamp) * 1000000
                     # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                 canid = int(row[1], 16)
                 if row[3 + datalen] == 'R':
@@ -93,6 +96,8 @@ def read_file(path, filename):
                 packet['datalen'].append(datalen)
                 packet['data'].append(data)
                 packet['flag'].append(flag)
+
+                before_timestamp = float(row[0])
 
             else:
                 exit("csv read error")
@@ -122,7 +127,6 @@ if __name__ == "__main__":
     for xx in car:
         for yy in attack:
             print(xx + " " + yy)
-            print()
             read_csv_kw(xx, yy)
             # 여기에서 실행하고 반복문 끝무렵 초기화
             # packet.clear()
@@ -163,8 +167,8 @@ if __name__ == "__main__":
     sigma = train.drop('flag', axis=1).cov().values
     model = multivariate_normal(cov=sigma, mean=mu, allow_singular=True)
 
-    print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
-    print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
+    # print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
+    # print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
 
     tresholds = np.linspace(-20, -5, 1000)
     scores = []
@@ -176,7 +180,6 @@ if __name__ == "__main__":
 
     scores = np.array(scores)
     print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
-    print()
 
     plt.plot(tresholds, scores[:, 0], label='$Recall$')
     plt.plot(tresholds, scores[:, 1], label='$Precision$')
