@@ -97,7 +97,7 @@ def read_file(path, filename):
             else:
                 exit("csv read error")
 
-        print(cnt)
+        # print(cnt)
         return packet
 
 
@@ -122,6 +122,7 @@ if __name__ == "__main__":
     for xx in car:
         for yy in attack:
             print(xx + " " + yy)
+            print()
             read_csv_kw(xx, yy)
             # 여기에서 실행하고 반복문 끝무렵 초기화
             # packet.clear()
@@ -162,10 +163,10 @@ if __name__ == "__main__":
     sigma = train.drop('flag', axis=1).cov().values
     model = multivariate_normal(cov=sigma, mean=mu, allow_singular=True)
 
-    # print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
-    # print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
+    print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
+    print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
 
-    tresholds = np.linspace(-20, -5, 10000)
+    tresholds = np.linspace(-20, -5, 1000)
     scores = []
     for treshold in tresholds:
         y_hat = (model.logpdf(valid.drop('flag', axis=1).values) < treshold).astype(int)
@@ -174,7 +175,8 @@ if __name__ == "__main__":
                        fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
     scores = np.array(scores)
-    print(scores[:, 2].max(), scores[:, 2].argmax())
+    print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+    print()
 
     plt.plot(tresholds, scores[:, 0], label='$Recall$')
     plt.plot(tresholds, scores[:, 1], label='$Precision$')
@@ -187,10 +189,10 @@ if __name__ == "__main__":
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
 
-    print('Final threshold: %d' % final_tresh)
+    print('Final threshold: %.3f' % final_tresh)
     print('Test Recall Score: %.3f' % recall_score(y_pred=y_hat_test, y_true=test['flag'].values))
     print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
-    print('Test F2 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=2))
+    print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
     cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
