@@ -62,6 +62,7 @@ def exit(err):
 # read csv file by path, filename
 # code for save data will be add later
 def read_file(path, filename):
+    global packet
     with open(os.path.join(path, filename), 'r') as fp:
         reader = csv.reader(fp)
         cnt = 0
@@ -103,7 +104,7 @@ def read_file(path, filename):
                 exit("csv read error")
 
         # print(cnt)
-        return packet
+        # return packet
 
 
 # Read csv file by keyword (Car type, Attack type) from study_input
@@ -115,30 +116,14 @@ def read_csv_kw(car_type, attack_type):
             read_file(path, file)
             break
 
+# clear items from dictionary, but remain keys
+# if you want to delete all (include keys), do it just my_dict.clear() 
+def clear_dict(my_dict):
+    for key in my_dict.keys():
+        my_dict[key].clear()
 
-if __name__ == "__main__":
-    # car = ["Sonata", "Soul", "Spark"]
-    # attack = ["Flooding", "Fuzzy", "Malfunction"]
-
-    car = ["Sonata"]
-    attack = ["Flooding"]
-    # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
-
-    for xx in car:
-        for yy in attack:
-            print(xx + " " + yy)
-            read_csv_kw(xx, yy)
-            # 여기에서 실행하고 반복문 끝무렵 초기화
-            # packet.clear()
-            # packet = {
-            #     'timestamp': [],
-            #     'canid': [],
-            #     'datalen': [],
-            #     'data': [],
-            #     'flag': []
-            # }
-            # 추후 초기화 부분 디버깅 필요
-
+# test using a file
+def train_valid_test():
     dataset = pd.DataFrame(packet)
     dataset['timestamp'] = np.log(dataset['timestamp'] + 1)
     dataset['canid'] = np.log(dataset['canid'] + 1)
@@ -199,3 +184,19 @@ if __name__ == "__main__":
 
     cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
+
+if __name__ == "__main__":
+    # car = ["Sonata", "Soul", "Spark"]
+    # attack = ["Flooding", "Fuzzy", "Malfunction"]
+
+    car_type = ["Sonata"]
+    attack_type = ["Flooding"]
+    # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
+
+    for car in car_type:
+        for attack in attack_type:
+            # 초기화 코드 추가 - 동관
+            clear_dict(packet)
+            read_csv_kw(car, attack)
+            train_valid_test()
+
