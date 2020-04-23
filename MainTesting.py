@@ -32,31 +32,6 @@ testing_packet = {
     'flag': []
 }
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    Copyed from a kernel by joparga3 https://www.kaggle.com/joparga3/kernels
-    """
-    plt.figure()
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=0)
-    plt.yticks(tick_marks, classes)
-
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.show()
-
 # read csv file by path, filename
 # code for save data will be add later
 def read_file(path, filename, packet):
@@ -85,7 +60,7 @@ def read_file(path, filename, packet):
 
                 # timestamp = float(row[0])
                 timestamp = int(float(row[0]) - before_timestamp) * 1000000
-                    # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
+                # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                 canid = int(row[1], 16)
                 if row[-1] == 'R':
                     flag = 0
@@ -110,8 +85,8 @@ def read_file(path, filename, packet):
         # print(cnt)
         # return packet
 
-
 def read_csv_train(car_type, attack_type):
+    """ params: car_type, attack_type """
     path = os.path.join(Utils.CURRENT_FOLDER, "study_input", car_type)
     file_list = os.listdir(path)
     for file in file_list:
@@ -120,6 +95,7 @@ def read_csv_train(car_type, attack_type):
             break
 
 def read_csv_test(car_type, attack_type):
+    """ params: car_type, attack_type """    
     path = os.path.join(Utils.CURRENT_FOLDER, "test_input", car_type)
     file_list = os.listdir(path)
     for file in file_list:
@@ -127,15 +103,16 @@ def read_csv_test(car_type, attack_type):
             read_file(path, file, testing_packet)
             break
 
-# clear items from dictionary, but remain keys
-# if you want to delete all (include keys), do it just my_dict.clear() 
 def clear_dict(my_dict):
+    """ 
+    param: dict
+    clear items from dictionary, but remain keys
+    if you want to delete all (include keys), do it just my_dict.clear() """  
     for key in my_dict.keys():
         my_dict[key].clear()
 
-# training from a file, then testing
 def train2test():
-    # 나중에 랜덤 안 써도 상관 없을 듯, 자료형 때문에 일단 미룸
+    """" training from a file, then testing """
     training_dataset = pd.DataFrame(training_packet)
     training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
     training_dataset['canid'] = np.log(training_dataset['canid'] + 1)
@@ -172,8 +149,8 @@ def train2test():
                        precision_score(y_pred=y_hat, y_true=valid['flag'].values),
                        fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
-    """scores = np.array(scores)
-    print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+    scores = np.array(scores)
+    """print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
 
     plt.plot(tresholds, scores[:, 0], label='$Recall$')
     plt.plot(tresholds, scores[:, 1], label='$Precision$')
