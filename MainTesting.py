@@ -72,20 +72,27 @@ def read_file(path, filename, packet):
                 cnt += 1
                 datalen = int(row[2])
                 data = 0
-                for idx in range(3, 3 + datalen):
+                # 2019 이용 데이터셋을 제외하고 message packet을 ,로 구분하지 않은 경우가 존재하여 예외처리함 - 동관
+                # 후에 예외처리가 더 필요할 수 있음
+                msg=[]
+                if row[3].count(" "):
+                    msg=row[3].split(" ")
+                else:
+                    msg=row[3:-1]
+                for idx in range(datalen):
                     data *= 0x100
-                    data += int(row[idx], 16)
+                    data += int(msg[idx], 16)
 
                 # timestamp = float(row[0])
                 timestamp = int(float(row[0]) - before_timestamp) * 1000000
                     # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                 canid = int(row[1], 16)
-                if row[3 + datalen] == 'R':
+                if row[-1] == 'R':
                     flag = 0
-                elif row[3 + datalen] == 'T':
+                elif row[-1] == 'T':
                     flag = 1
                 else:
-                    print(row[3 + datalen])
+                    print(row[-1])
 
                 # timestamp, CANID, datalen, data, flag must be saved
 
