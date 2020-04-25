@@ -17,6 +17,31 @@ np.random.seed(42)
 
 CURRENT_FOLDER=os.path.dirname(os.path.abspath(__file__))
 
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    Copyed from a kernel by joparga3 https://www.kaggle.com/joparga3/kernels
+    """
+    plt.figure()
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=0)
+    plt.yticks(tick_marks, classes)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
+
 class Message:
     def __init__(self, folder, car_type, attack_type):
         """ Datas from a file 
@@ -52,9 +77,16 @@ class Message:
                     cnt += 1
                     datalen = int(row[2])
                     data = 0
-                    for idx in range(3, 3 + datalen):
+                    # 2019 이용 데이터셋을 제외하고 message packet을 ,로 구분하지 않은 경우가 존재하여 예외처리함 - 동관
+                    # 후에 예외처리가 더 필요할 수 있음
+                    msg=[]
+                    if row[3].count(" "):
+                        msg=row[3].split(" ")
+                    else:
+                        msg=row[3:-1]
+                    for idx in range(datalen):
                         data *= 0x100
-                        data += int(row[idx], 16)
+                        data += int(msg[idx], 16)
 
                     # timestamp = float(row[0])
                     timestamp = int(float(row[0]) - before_timestamp) * 1000000
@@ -123,7 +155,7 @@ class Message:
                         fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
         scores = np.array(scores)
-        """ print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+        print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
 
         plt.plot(tresholds, scores[:, 0], label='$Recall$')
         plt.plot(tresholds, scores[:, 1], label='$Precision$')
@@ -131,7 +163,7 @@ class Message:
         plt.ylabel('Score')
         plt.xlabel('Threshold')
         plt.legend(loc='best')
-        plt.show()"""
+        plt.show()
 
         final_tresh = tresholds[scores[:, 2].argmax()]
         y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -141,5 +173,5 @@ class Message:
         print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
         print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
-        """cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
-        plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')"""
+        cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+        plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')

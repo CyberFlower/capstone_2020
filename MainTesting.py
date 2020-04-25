@@ -1,7 +1,7 @@
 import os
 import csv
 import sys
-import Utils
+from Utils import Message, CURRENT_FOLDER, plot_confusion_matrix
 
 import pandas as pd # for data analytics
 import numpy as np # for numerical computation
@@ -87,7 +87,7 @@ def read_file(path, filename, packet):
 
 def read_csv_train(car_type, attack_type):
     """ params: car_type, attack_type """
-    path = os.path.join(Utils.CURRENT_FOLDER, "study_input", car_type)
+    path = os.path.join(CURRENT_FOLDER, "study_input", car_type)
     file_list = os.listdir(path)
     for file in file_list:
         if attack_type in file:
@@ -96,7 +96,7 @@ def read_csv_train(car_type, attack_type):
 
 def read_csv_test(car_type, attack_type):
     """ params: car_type, attack_type """    
-    path = os.path.join(Utils.CURRENT_FOLDER, "test_input", car_type)
+    path = os.path.join(CURRENT_FOLDER, "test_input", car_type)
     file_list = os.listdir(path)
     for file in file_list:
         if attack_type in file:
@@ -150,7 +150,7 @@ def train2test():
                        fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
     scores = np.array(scores)
-    """print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+    print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
 
     plt.plot(tresholds, scores[:, 0], label='$Recall$')
     plt.plot(tresholds, scores[:, 1], label='$Precision$')
@@ -158,7 +158,7 @@ def train2test():
     plt.ylabel('Score')
     plt.xlabel('Threshold')
     plt.legend(loc='best')
-    plt.show()"""
+    plt.show()
 
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -168,12 +168,12 @@ def train2test():
     print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
     print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
-    #cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
-    #plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
+    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
 
 if __name__=='__main__':
     car_type = ["Sonata"]
-    attack_type = ["Fuzzy"]
+    attack_type = ["Fuzzy","Flooding","Malfunction"]
     # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
 
     for car in car_type:
