@@ -1,0 +1,24 @@
+[+] Start testing Sonata Fuzzy
+Final threshold: -5.556
+Test Recall Score: 0.779
+Test Precision Score: 0.283
+Test F1 Score: 0.415
+
+[+] Start testing Sonata Malfunction
+Final threshold: -5.511
+Test Recall Score: 1.000
+Test Precision Score: 0.001
+Test F1 Score: 0.001
+
+[+] Start testing Soul Fuzzy
+Final threshold: -5.150
+Test Recall Score: 0.679
+Test Precision Score: 0.372
+Test F1 Score: 0.481
+
+[+] Start testing Soul Malfunction
+Final threshold: -5.000
+Test Recall Score: 0.500
+Test Precision Score: 0.000
+Test F1 Score: 0.001
+

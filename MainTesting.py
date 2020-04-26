@@ -176,8 +176,9 @@ def train2test(car, attack):
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix',car=car,attack=attack)
 
 if __name__=='__main__':
-    car_type = ["Sonata","Soul","Spark"]
-    attack_type = ["Fuzzy","Flooding","Malfunction"]
+    # Flooding 도 하면 좋겠지만 파일이 하나라서...TT
+    car_type = ["Sonata","Soul"]
+    attack_type = ["Fuzzy","Malfunction"]
     # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
 
     for car in car_type:
