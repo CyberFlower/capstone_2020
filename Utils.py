@@ -17,7 +17,7 @@ np.random.seed(42)
 
 CURRENT_FOLDER=os.path.dirname(os.path.abspath(__file__))
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues,car,attack):
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues,car="",attack=""):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -41,7 +41,8 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     #plt.show()
-    plt.savefig(os.path.join(CURRENT_FOLDER,car,attack+"_confusion_matrix.png"))
+    plt.title(car+" "+attack+" confusion matrix")
+    plt.savefig(os.path.join(CURRENT_FOLDER,"output",car,attack+"_confusion_matrix.png"))
 
 class Message:
     def __init__(self, folder, car_type, attack_type):

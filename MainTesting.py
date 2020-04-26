@@ -161,6 +161,7 @@ def train2test(car, attack):
     plt.xlabel('Threshold')
     plt.legend(loc='best')
     #plt.show()
+    plt.title(car+" "+attack+" f1 score")
     plt.savefig(os.path.join(CURRENT_FOLDER,"output",car,attack+"_f1_score.png"))
 
     final_tresh = tresholds[scores[:, 2].argmax()]
@@ -171,11 +172,11 @@ def train2test(car, attack):
     print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
     print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
-    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test,car,attack)
-    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
+    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix',car=car,attack=attack)
 
 if __name__=='__main__':
-    car_type = ["Sonata"]
+    car_type = ["Sonata","Soul","Spark"]
     attack_type = ["Fuzzy","Flooding","Malfunction"]
     # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
 
