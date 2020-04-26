@@ -41,7 +41,9 @@ def read_file(path, filename, packet):
         before_timestamp = 0
 
         for row in reader:
-            if row[-1] == 'R' or row[-1] == 'T':
+            if len(row)==0:
+                print(" [-] debugging... line "+str(cnt)+" in  "+filename+" is empty")
+            elif row[-1] == 'R' or row[-1] == 'T':
                 if cnt == 0:
                     before_timestamp = float(row[0])
                 cnt += 1
@@ -150,7 +152,7 @@ def train2test():
                        fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
     scores = np.array(scores)
-    print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+    #print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
 
     plt.plot(tresholds, scores[:, 0], label='$Recall$')
     plt.plot(tresholds, scores[:, 1], label='$Precision$')
@@ -181,6 +183,8 @@ if __name__=='__main__':
             # 초기화 코드 추가 - 동관
             clear_dict(training_packet)
             clear_dict(testing_packet)            
+            print("[+] Start testing "+car+" "+attack)
             read_csv_test(car, attack)            
             read_csv_train(car, attack)
             train2test()
+            print()
