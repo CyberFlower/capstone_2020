@@ -113,7 +113,7 @@ def clear_dict(my_dict):
     for key in my_dict.keys():
         my_dict[key].clear()
 
-def train2test():
+def train2test(car, attack):
     """" training from a file, then testing """
     training_dataset = pd.DataFrame(training_packet)
     training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
@@ -160,7 +160,8 @@ def train2test():
     plt.ylabel('Score')
     plt.xlabel('Threshold')
     plt.legend(loc='best')
-    plt.show()
+    #plt.show()
+    plt.savefig(os.path.join(CURRENT_FOLDER,"output",car,attack+"_f1_score.png"))
 
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -170,7 +171,7 @@ def train2test():
     print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
     print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
-    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+    cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test,car,attack)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
 
 if __name__=='__main__':
@@ -186,5 +187,5 @@ if __name__=='__main__':
             print("[+] Start testing "+car+" "+attack)
             read_csv_test(car, attack)            
             read_csv_train(car, attack)
-            train2test()
+            train2test(car, attack)
             print()

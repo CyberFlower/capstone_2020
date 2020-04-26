@@ -40,7 +40,8 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    #plt.show()
+    plt.savefig(os.path.join(CURRENT_FOLDER,car,attack+"_confusion_matrix.png"))
 
 class Message:
     def __init__(self, folder, car_type, attack_type):
