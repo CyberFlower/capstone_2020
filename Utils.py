@@ -1,7 +1,6 @@
 import os
 import csv
 import sys
-import Utils
 import pandas as pd # for data analytics
 import numpy as np # for numerical computation
 from matplotlib import pyplot as plt, style # for ploting
@@ -58,6 +57,9 @@ class Message:
             'flag': []
         }        
         self.path = os.path.join(CURRENT_FOLDER, "study_input", car_type)
+        self.car=car_type
+        self.attack=attack_type
+        self.filename=""
         file_list = os.listdir(self.path)
         for file in file_list:
             if attack_type in file:
@@ -157,7 +159,7 @@ class Message:
                         fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
 
         scores = np.array(scores)
-        print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
+        #print(scores[:, 2].max(), scores[:, 2].argmax(), tresholds[scores[:, 2].argmax()])
 
         plt.plot(tresholds, scores[:, 0], label='$Recall$')
         plt.plot(tresholds, scores[:, 1], label='$Precision$')
@@ -165,7 +167,9 @@ class Message:
         plt.ylabel('Score')
         plt.xlabel('Threshold')
         plt.legend(loc='best')
-        plt.show()
+        #plt.show()
+        plt.title(self.car+" "+self.attack+" f1 score")
+        plt.savefig(os.path.join(CURRENT_FOLDER,"output",self.car,self.attack+"_f1_score.png"))        
 
         final_tresh = tresholds[scores[:, 2].argmax()]
         y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -176,4 +180,4 @@ class Message:
         print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
 
         cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
-        plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix')
+        plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix',car=self.car,attack=self.attack)

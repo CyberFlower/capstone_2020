@@ -1,9 +1,6 @@
 import os
 import csv
 import sys
-import Utils
-
-# 추가
 import pandas as pd # for data analytics
 import numpy as np # for numerical computation
 from matplotlib import pyplot as plt, style # for ploting
@@ -13,17 +10,14 @@ from sklearn.metrics import fbeta_score, precision_score, recall_score, confusio
 from scipy.stats import multivariate_normal
 import itertools
 import missingno as msno
-
-style.use('ggplot')
-np.random.seed(42) 
-
+import Utils
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    Copyed from a kernel by joparga3 https://www.kaggle.com/joparga3/kernels
-    """
+    
+    # This function prints and plots the confusion matrix.
+    # Normalization can be applied by setting `normalize=True`.
+    # Copyed from a kernel by joparga3 https://www.kaggle.com/joparga3/kernels
+    
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -172,7 +166,7 @@ def train_valid_test():
     plt.ylabel('Score')
     plt.xlabel('Threshold')
     plt.legend(loc='best')
-    plt.show()
+    #plt.show()
 
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -189,8 +183,8 @@ if __name__ == "__main__":
     # car = ["Sonata", "Soul", "Spark"]
     # attack = ["Flooding", "Fuzzy", "Malfunction"]
 
-    car_type = ["Sonata"]
-    attack_type = ["Flooding"]
+    car_type = ["Sonata","Soul"]
+    attack_type = ["Fuzzy", "Malfunction"]
     # 실제 구현으로는 아래 반복문 안에서 실행시키면 될 것
 
     for car in car_type:
