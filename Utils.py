@@ -1,22 +1,19 @@
-import os
-import csv
-import sys
-import pandas as pd # for data analytics
-import numpy as np # for numerical computation
-from matplotlib import pyplot as plt, style # for ploting
-import seaborn as sns # for ploting
+import os, csv
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt, style
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix # for evaluation
+from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix
 from scipy.stats import multivariate_normal
 import itertools
-import missingno as msno
 
 style.use('ggplot')
 np.random.seed(42) 
 
 CURRENT_FOLDER=os.path.dirname(os.path.abspath(__file__))
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues,car="",attack=""):
+
+def plot_confusion_matrix(cm, classes, title='Confusion matrix', cmap=plt.cm.Blues, car="", attack=""):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -39,9 +36,10 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    #plt.show()
-    plt.title(car+" "+attack+" confusion matrix")
-    plt.savefig(os.path.join(CURRENT_FOLDER,"output",car,attack+"_confusion_matrix.png"))
+    # plt.show()
+    plt.title(car + " " + attack + " confusion matrix")
+    plt.savefig(os.path.join(CURRENT_FOLDER, "output", car,attack + "_confusion_matrix.png"))
+
 
 class Message:
     def __init__(self, folder, car_type, attack_type):
