@@ -166,7 +166,10 @@ def statistical_tec(train, valid, test, car, attack):
     sigma = train.drop('flag', axis=1).cov().values
     model = multivariate_normal(cov=sigma, mean=mu, allow_singular=True)
 
-    tresholds = np.linspace(-20, -5, 1000)
+    # print(np.median(model.logpdf(valid[valid['flag'] == 0].drop('flag', axis=1).values)))
+    # print(np.median(model.logpdf(valid[valid['flag'] == 1].drop('flag', axis=1).values)))
+
+    tresholds = np.linspace(-45, -44, 1000)
     scores = []
     for treshold in tresholds:
         y_hat = (model.logpdf(valid.drop('flag', axis=1).values) < treshold).astype(int)
@@ -189,10 +192,11 @@ def statistical_tec(train, valid, test, car, attack):
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
 
-    print('Final threshold: %.3f' % final_tresh)
-    print('Test Recall Score: %.3f' % recall_score(y_pred=y_hat_test, y_true=test['flag'].values))
-    print('Test Precision Score: %.3f' % precision_score(y_pred=y_hat_test, y_true=test['flag'].values))
-    print('Test F1 Score: %.3f' % fbeta_score(y_pred=y_hat_test, y_true=test['flag'].values, beta=1))
+    # print('Final threshold: %.8f' % final_tresh)
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test['flag'], y_hat_test) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test['flag'], y_hat_test) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test['flag'], y_hat_test) * 100))
+    print('F1 Score: {:.4f}%'.format(fbeta_score(test['flag'], y_hat_test, beta=1) * 100))
 
     cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
