@@ -155,9 +155,6 @@ def decisiontree_tec(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    print(train_Y.mean())
-    print(test_Y.mean())
-
     clf = tree.DecisionTreeClassifier(random_state=0)
     clf.fit(train_X, train_Y)
 
@@ -174,9 +171,6 @@ def decisiontree_tec(train, valid, test, car, attack):
 
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
-
-    tn, fp, fn, tp = confusion_matrix(test_Y, preds).ravel()
-    print(tn, fp, fn, tp)
 
 
 def train2test(car, attack):
