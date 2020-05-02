@@ -7,8 +7,6 @@ import numpy as np # for numerical computation
 from matplotlib import pyplot as plt, style # for ploting
 from sklearn.metrics import accuracy_score, fbeta_score, precision_score, recall_score, confusion_matrix # for evaluation
 from scipy.stats import multivariate_normal
-from sklearn import tree
-from sklearn.datasets import load_iris
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 style.use('ggplot')
@@ -31,6 +29,36 @@ testing_packet = {
     'flag': []
 }
 
+'''
+training_packet = {
+    'timestamp': [],
+    'canid': [],
+    'datalen': [],
+    'data1': [],
+    'data2': [],
+    'data3': [],
+    'data4': [],
+    'data5': [],
+    'data6': [],
+    'data7': [],
+    'data8': [],
+    'flag': []
+}
+testing_packet = {
+    'timestamp': [],
+    'canid': [],
+    'datalen': [],
+    'data1': [],
+    'data2': [],
+    'data3': [],
+    'data4': [],
+    'data5': [],
+    'data6': [],
+    'data7': [],
+    'data8': [],
+    'flag': []
+}
+'''
 
 # read csv file by path, filename
 # code for save data will be add later
@@ -46,20 +74,31 @@ def read_file(path, filename, packet):
                 print(" [-] debugging... line " + str(cnt) + " in  " + filename + " is empty")
 
             elif row[-1] == 'R' or row[-1] == 'T':
+
                 if cnt == 0:
                     before_timestamp = float(row[0])
+
                 cnt += 1
                 datalen = int(row[2])
-                data = 0
 
                 msg = []
                 if row[3].count(" "):
                     msg = row[3].split(" ")
                 else:
-                    msg=row[3:-1]
+                    msg = row[3:-1]
+
+                data = 0
                 for idx in range(datalen):
                     data *= 0x100
                     data += int(msg[idx], 16)
+
+                '''
+                data = []
+                for i in range(8-datalen):
+                    data.append(0)
+                for idx in range(datalen):
+                    data.append(int(msg[idx], 16))
+                '''
 
                 timestamp = (float(row[0]) - before_timestamp) * 1000000
                 canid = int(row[1], 16)
@@ -75,6 +114,16 @@ def read_file(path, filename, packet):
                 packet['canid'].append(canid)
                 packet['datalen'].append(datalen)
                 packet['data'].append(data)
+                '''
+                packet['data1'].append(data[0])
+                packet['data2'].append(data[1])
+                packet['data3'].append(data[2])
+                packet['data4'].append(data[3])
+                packet['data5'].append(data[4])
+                packet['data6'].append(data[5])
+                packet['data7'].append(data[6])
+                packet['data8'].append(data[7])
+                '''
                 packet['flag'].append(flag)
 
                 before_timestamp = float(row[0])
@@ -155,7 +204,7 @@ def decisiontree_tec(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    clf = tree.DecisionTreeClassifier(random_state=0)
+    clf = DecisionTreeClassifier(random_state=0)
     clf.fit(train_X, train_Y)
 
     preds = clf.predict(test_X)
@@ -175,19 +224,18 @@ def decisiontree_tec(train, valid, test, car, attack):
 
 def train2test(car, attack):
     """" training from a file, then testing """
-
     training_dataset = pd.DataFrame(training_packet)
-    training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
-    training_dataset['canid'] = np.log(training_dataset['canid'] + 1)
-    training_dataset['data'] = np.log(training_dataset['data'] + 1)
+    # training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
+    # training_dataset['canid'] = np.log(training_dataset['canid'] + 1)
+    # training_dataset['data'] = np.log(training_dataset['data'] + 1)
 
     training_normal = training_dataset[training_dataset['flag'] == 0]
     training_abnormal = training_dataset[training_dataset['flag'] == 1]
 
     testing_dataset = pd.DataFrame(testing_packet)
-    testing_dataset['timestamp'] = np.log(testing_dataset['timestamp'] + 1)
-    testing_dataset['canid'] = np.log(testing_dataset['canid'] + 1)
-    testing_dataset['data'] = np.log(testing_dataset['data'] + 1)
+    # testing_dataset['timestamp'] = np.log(testing_dataset['timestamp'] + 1)
+    # testing_dataset['canid'] = np.log(testing_dataset['canid'] + 1)
+    # testing_dataset['data'] = np.log(testing_dataset['data'] + 1)
 
     testing_normal = testing_dataset[testing_dataset['flag'] == 0]
     testing_abnormal = testing_dataset[testing_dataset['flag'] == 1]
