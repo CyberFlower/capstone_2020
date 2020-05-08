@@ -228,6 +228,9 @@ def decisiontree_tec(train, valid, test, car, attack):
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
+    # plt.title(car + " " + attack + " f1 score")
+    # plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_f1_score.png"))
+
 
 def kNN_tec(train, valid, test, car, attack):
     train_X = valid.drop(['flag'], axis=1)
@@ -380,8 +383,8 @@ def train2test(car, attack):
     test = testing_normal.append(testing_abnormal)
 
     # statistical_tec(train, valid, test, car, attack)
-    # decisiontree_tec(train, valid, test, car, attack)
-    kNN_tec(train, valid, test, car, attack)
+    decisiontree_tec(train, valid, test, car, attack)
+    # kNN_tec(train, valid, test, car, attack)
     # logireg_tec(train, valid, test, car, attack)
         # 로지스틱 회의 경우 제대로 분류 X
     # linSVM_tec(train, valid, test, car, attack)
