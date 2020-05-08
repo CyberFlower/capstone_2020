@@ -212,7 +212,7 @@ def decisiontree_tec(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    clf = DecisionTreeClassifier(max_depth=15, random_state=0)
+    clf = DecisionTreeClassifier(max_depth=3, random_state=0)
     clf.fit(train_X, train_Y)
 
     preds = clf.predict(test_X)
