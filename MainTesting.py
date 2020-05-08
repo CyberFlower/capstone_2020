@@ -212,7 +212,7 @@ def decisiontree_tec(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    clf = DecisionTreeClassifier(random_state=0)
+    clf = DecisionTreeClassifier(max_depth=5, random_state=0)
     clf.fit(train_X, train_Y)
 
     preds = clf.predict(test_X)
@@ -222,8 +222,9 @@ def decisiontree_tec(train, valid, test, car, attack):
     print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
     print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
 
-    fig, ax = plt.subplots(figsize=(20, 20))
+    fig, ax = plt.subplots(figsize=(20, 8))
     plot_tree(clf, ax=ax, filled=True)
+    plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_decision_plot_tree.svg"), format='svg')
 
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
