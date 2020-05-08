@@ -8,6 +8,11 @@ from matplotlib import pyplot as plt, style # for ploting
 from sklearn.metrics import accuracy_score, fbeta_score, precision_score, recall_score, confusion_matrix # for evaluation
 from scipy.stats import multivariate_normal
 from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
 
 style.use('ggplot')
 np.random.seed(42) 
@@ -184,10 +189,9 @@ def statistical_tec(train, valid, test, car, attack):
     plt.ylabel('Score')
     plt.xlabel('Threshold')
     plt.legend(loc='best')
-    # plt.show()
-
     plt.title(car + " " + attack + " f1 score")
-    plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_f1_score.png"))
+
+    # plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_f1_score.png"))
 
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
@@ -220,7 +224,134 @@ def decisiontree_tec(train, valid, test, car, attack):
 
     fig, ax = plt.subplots(figsize=(20, 20))
     plot_tree(clf, ax=ax, filled=True)
-    plt.show()
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def kNN_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = KNeighborsClassifier()
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+    a_index = list(range(1, 11))
+    a = pd.Series()
+    x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    for i in list(range(1, 11)):
+        model = KNeighborsClassifier(n_neighbors=i)
+        model.fit(train_X, train_Y)
+        prediction = model.predict(test_X)
+        a = a.append(pd.Series(accuracy_score(prediction, test_Y)))
+    plt.plot(a_index, a)
+    plt.xticks(x)
+    fig = plt.gcf()
+    fig.set_size_inches(12, 6)
+    print('Accuracies for different values of n are:', a.values, 'with the max value as ', a.values.max())
+
+
+def logireg_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = LogisticRegression()
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def linSVM_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = svm.SVC(kernel='linear', C=0.1, gamma=0.1)
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def rbfSVM_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = svm.SVC(kernel='rbf', C=0.1, gamma=0.1)
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def gaunav_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = GaussianNB()
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def randomforest_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = RandomForestClassifier(n_estimators=100)
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
 
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
@@ -249,7 +380,15 @@ def train2test(car, attack):
     test = testing_normal.append(testing_abnormal)
 
     # statistical_tec(train, valid, test, car, attack)
-    decisiontree_tec(train, valid, test, car, attack)
+    # decisiontree_tec(train, valid, test, car, attack)
+    kNN_tec(train, valid, test, car, attack)
+    # logireg_tec(train, valid, test, car, attack)
+        # 로지스틱 회의 경우 제대로 분류 X
+    # linSVM_tec(train, valid, test, car, attack)
+    # rbfSVM_tec(train, valid, test, car, attack)
+        # 서포트 벡터 머신의 경우 시간이 너무 오래 걸림. 위 SVM 2개는 서버에서 돌려주세요 ㅠㅠ
+    # gaunav_tec(train, valid, test, car, attack)
+    # randomforest_tec(train, valid, test, car, attack)
 
 
 if __name__=='__main__':
@@ -265,4 +404,6 @@ if __name__=='__main__':
             read_csv_test(car, attack)            
             read_csv_train(car, attack)
             train2test(car, attack)
+            plt.show()
+
             print()
