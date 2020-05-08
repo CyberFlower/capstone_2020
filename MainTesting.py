@@ -228,9 +228,6 @@ def decisiontree_tec(train, valid, test, car, attack):
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
-    # plt.title(car + " " + attack + " f1 score")
-    # plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_f1_score.png"))
-
 
 def kNN_tec(train, valid, test, car, attack):
     train_X = valid.drop(['flag'], axis=1)
