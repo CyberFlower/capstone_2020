@@ -15,9 +15,8 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 
 style.use('ggplot')
-np.random.seed(42) 
+np.random.seed(31)
 
-'''
 training_packet = {
     'timestamp': [],
     'canid': [],
@@ -30,36 +29,6 @@ testing_packet = {
     'canid': [],
     'datalen': [],
     'data': [],
-    'flag': []
-}
-'''
-
-training_packet = {
-    'timestamp': [],
-    'canid': [],
-    'datalen': [],
-    'data1': [],
-    'data2': [],
-    'data3': [],
-    'data4': [],
-    'data5': [],
-    'data6': [],
-    'data7': [],
-    'data8': [],
-    'flag': []
-}
-testing_packet = {
-    'timestamp': [],
-    'canid': [],
-    'datalen': [],
-    'data1': [],
-    'data2': [],
-    'data3': [],
-    'data4': [],
-    'data5': [],
-    'data6': [],
-    'data7': [],
-    'data8': [],
     'flag': []
 }
 
@@ -86,24 +55,15 @@ def read_file(path, filename, packet):
                 datalen = int(row[2])
 
                 msg = []
-
                 if row[3].count(" "):
                     msg = row[3].split(" ")
                 else:
                     msg = row[3:-1]
 
-                '''
                 data = 0
                 for idx in range(datalen):
                     data *= 0x100
                     data += int(msg[idx], 16)
-
-                '''
-                data = []
-                for i in range(8-datalen):
-                    data.append(0)
-                for idx in range(datalen):
-                    data.append(int(msg[idx], 16))
 
                 timestamp = (float(row[0]) - before_timestamp) * 1000000
                 canid = int(row[1], 16)
@@ -118,15 +78,7 @@ def read_file(path, filename, packet):
                 packet['timestamp'].append(timestamp)
                 packet['canid'].append(canid)
                 packet['datalen'].append(datalen)
-                #packet['data'].append(data)
-                packet['data1'].append(data[0])
-                packet['data2'].append(data[1])
-                packet['data3'].append(data[2])
-                packet['data4'].append(data[3])
-                packet['data5'].append(data[4])
-                packet['data6'].append(data[5])
-                packet['data7'].append(data[6])
-                packet['data8'].append(data[7])
+                packet['data'].append(data)
                 packet['flag'].append(flag)
 
                 before_timestamp = float(row[0])
@@ -228,13 +180,13 @@ def decisiontree_tec(train, valid, test, car, attack):
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
 
-def kNN_tec(train, valid, test, car, attack):
+def randomforest_tec(train, valid, test, car, attack):
     train_X = valid.drop(['flag'], axis=1)
     train_Y = valid['flag']
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    model = KNeighborsClassifier()
+    model = RandomForestClassifier(n_estimators=10)
     model.fit(train_X, train_Y)
     preds = model.predict(test_X)
 
@@ -246,28 +198,14 @@ def kNN_tec(train, valid, test, car, attack):
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
-    a_index = list(range(1, 11))
-    a = pd.Series()
-    x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    for i in list(range(1, 11)):
-        model = KNeighborsClassifier(n_neighbors=i)
-        model.fit(train_X, train_Y)
-        prediction = model.predict(test_X)
-        a = a.append(pd.Series(accuracy_score(prediction, test_Y)))
-    plt.plot(a_index, a)
-    plt.xticks(x)
-    fig = plt.gcf()
-    fig.set_size_inches(12, 6)
-    print('Accuracies for different values of n are:', a.values, 'with the max value as ', a.values.max())
 
-
-def logireg_tec(train, valid, test, car, attack):
+def kNN_tec(train, valid, test, car, attack):
     train_X = valid.drop(['flag'], axis=1)
     train_Y = valid['flag']
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    model = LogisticRegression()
+    model = KNeighborsClassifier(n_neighbors=1)
     model.fit(train_X, train_Y)
     preds = model.predict(test_X)
 
@@ -318,51 +256,21 @@ def rbfSVM_tec(train, valid, test, car, attack):
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
 
-def gaunav_tec(train, valid, test, car, attack):
-    train_X = valid.drop(['flag'], axis=1)
-    train_Y = valid['flag']
-    test_X = test.drop(['flag'], axis=1)
-    test_Y = test['flag']
-
-    model = GaussianNB()
-    model.fit(train_X, train_Y)
-    preds = model.predict(test_X)
-
-    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
-    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
-    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
-    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
-
-    cnf_matrix = confusion_matrix(test_Y, preds)
-    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
-
-
-def randomforest_tec(train, valid, test, car, attack):
-    train_X = valid.drop(['flag'], axis=1)
-    train_Y = valid['flag']
-    test_X = test.drop(['flag'], axis=1)
-    test_Y = test['flag']
-
-    model = RandomForestClassifier(n_estimators=100)
-    model.fit(train_X, train_Y)
-    preds = model.predict(test_X)
-
-    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
-    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
-    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
-    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
-
-    cnf_matrix = confusion_matrix(test_Y, preds)
-    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
-
-
 def train2test(car, attack):
     """" training from a file, then testing """
     training_dataset = pd.DataFrame(training_packet)
+    training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
+    training_dataset['datalen'] = np.log(training_dataset['datalen'] + 1)
+    training_dataset['data'] = np.log(training_dataset['data'] + 1)
+
     training_normal = training_dataset[training_dataset['flag'] == 0]
     training_abnormal = training_dataset[training_dataset['flag'] == 1]
 
     testing_dataset = pd.DataFrame(testing_packet)
+    testing_dataset['timestamp'] = np.log(testing_dataset['timestamp'] + 1)
+    testing_dataset['datalen'] = np.log(testing_dataset['datalen'] + 1)
+    testing_dataset['data'] = np.log(testing_dataset['data'] + 1)
+
     testing_normal = testing_dataset[testing_dataset['flag'] == 0]
     testing_abnormal = testing_dataset[testing_dataset['flag'] == 1]
 
@@ -370,16 +278,15 @@ def train2test(car, attack):
     valid = training_normal.append(training_abnormal)
     test = testing_normal.append(testing_abnormal)
 
-    # statistical_tec(train, valid, test, car, attack)
-    decisiontree_tec(train, valid, test, car, attack)
-    # kNN_tec(train, valid, test, car, attack)
-    # logireg_tec(train, valid, test, car, attack)
-        # 로지스틱 회의 경우 제대로 분류 X
+    ## statistical_tec(train, valid, test, car, attack)
+    ## decisiontree_tec(train, valid, test, car, attack)
+
+    # randomforest_tec(train, valid, test, car, attack)
+    kNN_tec(train, valid, test, car, attack)
+
     # linSVM_tec(train, valid, test, car, attack)
     # rbfSVM_tec(train, valid, test, car, attack)
         # 서포트 벡터 머신의 경우 시간이 너무 오래 걸림. 위 SVM 2개는 서버에서 돌려주세요 ㅠㅠ
-    # gaunav_tec(train, valid, test, car, attack)
-    # randomforest_tec(train, valid, test, car, attack)
 
 
 if __name__=='__main__':
