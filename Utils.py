@@ -142,8 +142,8 @@ class Message:
         abnormal = dataset[dataset['flag'] == 1]
         
         fig, ax = plt.subplots()
-        for color in ['red', 'blue']:
-            if color=='red':
+        for color in ["red", "blue"]:
+            if color=="blue":
                 ax.scatter(normal['canid'],normal['data'],c=color,label='normal')
             else:
                 ax.scatter(abnormal['canid'],abnormal['data'],c=color,label='abnormal')
@@ -153,7 +153,36 @@ class Message:
         plt.title(self.car+" "+self.attack+" "+"Scatter")
         plt.xlabel("CAN ID")
         plt.ylabel("Logarithm of Attack Message")
-        plt.savefig(os.path.join(self.path,"scatter_"+self.car+"_"+self.attack+".png"))
+        if not os.path.exists(os.path.join(self.path,"img")):
+            os.makedirs(os.path.join(self.path,"img"))
+        plt.savefig(os.path.join(self.path,"img","scatter_"+self.car+"_"+self.attack+".png"))
+
+    def rev_scatter_graph(self):
+        dataset = pd.DataFrame(self.packet)
+        #dataset['timestamp'] = np.log(dataset['timestamp'] + 1)
+        #dataset['datalen'] = np.log(dataset['datalen'] + 1)
+        dataset['data'] = np.log(dataset['data'] + 1)
+        dataset['canid']=self.packet['canid']
+        #dataset['threat']=self.packet['flag']
+
+        normal = dataset[dataset['flag'] == 0]
+        abnormal = dataset[dataset['flag'] == 1]
+        
+        fig, ax = plt.subplots()
+        for color in ["red", "blue"]:
+            if color=="red":
+                ax.scatter(normal['canid'],normal['data'],c=color,label='normal')
+            else:
+                ax.scatter(abnormal['canid'],abnormal['data'],c=color,label='abnormal')
+        ax.legend()
+        ax.grid(True)
+
+        plt.title(self.car+" "+self.attack+" "+"Scatter")
+        plt.xlabel("CAN ID")
+        plt.ylabel("Logarithm of Attack Message")
+        if not os.path.exists(os.path.join(self.path,"img")):
+            os.makedirs(os.path.join(self.path,"img"))        
+        plt.savefig(os.path.join(self.path,"img","rev_scatter_"+self.car+"_"+self.attack+".png"))
 
     def study_and_test(self):
         """ this function study from a file, and test this file

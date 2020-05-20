@@ -13,6 +13,7 @@ if __name__=='__main__':
                 msg.read_file()
                 #msg.study_and_test()
                 msg.scatter_graph()
+                msg.rev_scatter_graph()
                 print()
 
     '''for car in car_type:
