@@ -54,10 +54,12 @@ class Message:
             'data': [],
             'flag': []
         }        
-        self.path = os.path.join(CURRENT_FOLDER, "study_input", car_type)
+        self.folder=folder
+        self.path = os.path.join(CURRENT_FOLDER, self.folder, car_type)
         self.car=car_type
         self.attack=attack_type
         self.filename=""
+        self.ln=0
         file_list = os.listdir(self.path)
         for file in file_list:
             if attack_type in file:
@@ -90,16 +92,19 @@ class Message:
                         data *= 0x100
                         data += int(msg[idx], 16)
 
-                    # timestamp = float(row[0])
-                    timestamp = int(float(row[0]) - before_timestamp) * 1000000
+                    timestamp = float(row[0])
+                    # timestamp = int(float(row[0]) - before_timestamp) * 1000000
+                    # timestamp 전부 0인데?? - 동관
+                    '''if timestamp!=0:
+                        print(timestamp)'''
                         # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                     canid = int(row[1], 16)
-                    if row[3 + datalen] == 'R':
+                    if row[-1] == 'R':
                         flag = 0
-                    elif row[3 + datalen] == 'T':
+                    elif row[-1] == 'T':
                         flag = 1
                     else:
-                        print(row[3 + datalen])
+                        print(row[-1])
 
                     # timestamp, CANID, datalen, data, flag must be saved
 
@@ -108,11 +113,47 @@ class Message:
                     self.packet['datalen'].append(datalen)
                     self.packet['data'].append(data)
                     self.packet['flag'].append(flag)
+                    self.ln=self.ln+1
 
                     before_timestamp = float(row[0])
 
                 else:
+                    #print("csv read error")
                     exit("csv read error")
+
+    def get_packet(self):
+        return self.packet
+
+    def write_file(self):
+        with open(os.path.join(self.path, "copy_"+self.filename), 'w') as fp:
+            writer=csv.writer(fp,delimiter=' ')
+            for i in range(self.ln):
+                writer.writerow([self.packet['timestamp'][i],self.packet['canid'][i],self.packet['data'][i],self.packet['flag'][i]])
+
+    def scatter_graph(self):
+        dataset = pd.DataFrame(self.packet)
+        #dataset['timestamp'] = np.log(dataset['timestamp'] + 1)
+        #dataset['datalen'] = np.log(dataset['datalen'] + 1)
+        dataset['data'] = np.log(dataset['data'] + 1)
+        dataset['canid']=self.packet['canid']
+        #dataset['threat']=self.packet['flag']
+
+        normal = dataset[dataset['flag'] == 0]
+        abnormal = dataset[dataset['flag'] == 1]
+        
+        fig, ax = plt.subplots()
+        for color in ['red', 'blue']:
+            if color=='red':
+                ax.scatter(normal['canid'],normal['data'],c=color,label='normal')
+            else:
+                ax.scatter(abnormal['canid'],abnormal['data'],c=color,label='abnormal')
+        ax.legend()
+        ax.grid(True)
+
+        plt.title(self.car+" "+self.attack+" "+"Scatter")
+        plt.xlabel("CAN ID")
+        plt.ylabel("Logarithm of Attack Message")
+        plt.savefig(os.path.join(self.path,"scatter_"+self.car+"_"+self.attack+".png"))
 
     def study_and_test(self):
         """ this function study from a file, and test this file
