@@ -14,6 +14,8 @@ if __name__=='__main__':
                 #msg.study_and_test()
                 msg.scatter_graph()
                 msg.rev_scatter_graph()
+                msg.no_log_scatter_graph()
+                msg.rev_no_log_scatter_graph()
                 print()
 
     '''for car in car_type:
