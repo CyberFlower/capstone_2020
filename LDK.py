@@ -12,10 +12,13 @@ if __name__=='__main__':
                 msg=Message(folder,car,attack)
                 msg.read_file()
                 #msg.study_and_test()
-                msg.scatter_graph()
-                msg.rev_scatter_graph()
-                msg.no_log_scatter_graph()
-                msg.rev_no_log_scatter_graph()
+                #msg.scatter_graph()
+                #msg.rev_scatter_graph()
+                #msg.no_log_scatter_graph()
+                #msg.rev_no_log_scatter_graph()
+                #msg.scatter_graph_time()
+                msg.scatter_graph_id_relate()    
+                msg.scatter_graph_id_relate(rev=True)                
                 print()
 
     '''for car in car_type:

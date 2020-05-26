@@ -8,6 +8,7 @@ from scipy.stats import multivariate_normal
 import itertools
 
 style.use('ggplot')
+#style.use('fivethirtyeight')
 np.random.seed(42) 
 
 CURRENT_FOLDER=os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +51,7 @@ class Message:
         self.packet = {
             'timestamp': [],
             'canid': [],
+            'id_relate': [],
             'datalen': [],
             'data': [],
             'flag': []
@@ -73,6 +75,7 @@ class Message:
             reader = csv.reader(fp)
             cnt = 0
             before_timestamp = 0
+            before_id = 0
 
             for row in reader:
                 if row[-1] == 'R' or row[-1] == 'T':
@@ -92,13 +95,13 @@ class Message:
                         data *= 0x100
                         data += int(msg[idx], 16)
 
-                    timestamp = float(row[0])
-                    # timestamp = int(float(row[0]) - before_timestamp) * 1000000
-                    # timestamp 전부 0인데?? - 동관
+                    timestamp = (float(row[0]) - before_timestamp) * 1000000.0
                     '''if timestamp!=0:
                         print(timestamp)'''
                         # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
                     canid = int(row[1], 16)
+                    idid = before_id*4096 + canid
+                    before_id=canid
                     if row[-1] == 'R':
                         flag = 0
                     elif row[-1] == 'T':
@@ -110,6 +113,7 @@ class Message:
 
                     self.packet['timestamp'].append(timestamp)
                     self.packet['canid'].append(canid)
+                    self.packet['id_relate'].append(idid)
                     self.packet['datalen'].append(datalen)
                     self.packet['data'].append(data)
                     self.packet['flag'].append(flag)
@@ -183,6 +187,69 @@ class Message:
         if not os.path.exists(os.path.join(self.path,"img")):
             os.makedirs(os.path.join(self.path,"img"))        
         plt.savefig(os.path.join(self.path,"img","rev_scatter_"+self.car+"_"+self.attack+".png"))
+
+    def scatter_graph_time(self, rev=False):
+        dataset = pd.DataFrame(self.packet)
+        dataset['timestamp'] = np.log(dataset['timestamp'] + 1)
+        #dataset['datalen'] = np.log(dataset['datalen'] + 1)
+        #dataset['data'] = np.log(dataset['data'] + 1)
+        dataset['canid']=self.packet['canid']
+        #dataset['threat']=self.packet['flag']
+
+        normal = dataset[dataset['flag'] == 0]
+        abnormal = dataset[dataset['flag'] == 1]
+        
+        fig, ax = plt.subplots()
+        for color in ["red", "blue"]:
+            if (rev and color=="blue") or (not rev and color=="red"):
+                ax.scatter(normal['canid'],normal['timestamp'],c=color,label='normal')
+            else:
+                ax.scatter(abnormal['canid'],abnormal['timestamp'],c=color,label='abnormal')
+        ax.legend()
+        ax.grid(True)
+
+        plt.title(self.car+" "+self.attack+" "+"Scatter")
+        plt.xlabel("CAN ID")
+        plt.ylabel("Logarithm of Timestamp")
+        if not os.path.exists(os.path.join(self.path,"img")):
+            os.makedirs(os.path.join(self.path,"img"))
+        file_title=""
+        if rev:
+            file_title="time_scatter_"+self.car+"_"+self.attack+".png"
+        else:
+            file_title="rev_time_scatter_"+self.car+"_"+self.attack+".png"
+
+        plt.savefig(os.path.join(self.path,"img",file_title))
+
+    def scatter_graph_id_relate(self, rev=False):
+        dataset = pd.DataFrame(self.packet)
+        dataset['data'] = np.log(dataset['data'] + 1)
+        dataset['id_relate'] = np.log(dataset['id_relate'] + 1)
+
+        normal = dataset[dataset['flag'] == 0]
+        abnormal = dataset[dataset['flag'] == 1]
+        
+        fig, ax = plt.subplots()
+        for color in ["red", "blue"]:
+            if (rev and color=="blue") or (not rev and color=="red"):
+                ax.scatter(normal['canid'],normal['id_relate'],c=color,label='normal')
+            else:
+                ax.scatter(abnormal['canid'],abnormal['id_relate'],c=color,label='abnormal')
+        ax.legend()
+        ax.grid(True)
+
+        plt.title(self.car+" "+self.attack+" "+"Scatter")
+        plt.xlabel("CAN ID")
+        plt.ylabel("Logarithm of ID relation")
+        if not os.path.exists(os.path.join(self.path,"img")):
+            os.makedirs(os.path.join(self.path,"img"))
+        file_title=""
+        if rev:
+            file_title="id_relate_scatter_"+self.car+"_"+self.attack+".png"
+        else:
+            file_title="rev_id_relate_scatter_"+self.car+"_"+self.attack+".png"
+
+        plt.savefig(os.path.join(self.path,"img",file_title))
 
     def no_log_scatter_graph(self):
         dataset = pd.DataFrame(self.packet)
