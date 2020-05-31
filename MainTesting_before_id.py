@@ -7,12 +7,15 @@ import numpy as np # for numerical computation
 from matplotlib import pyplot as plt, style # for ploting
 from sklearn.metrics import accuracy_score, fbeta_score, precision_score, recall_score, confusion_matrix # for evaluation
 from scipy.stats import multivariate_normal
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.ensemble import VotingClassifier
 
 style.use('ggplot')
 np.random.seed(31)
@@ -20,7 +23,8 @@ np.random.seed(31)
 training_packet = {
     'timestamp': [],
     'canid': [],
-    'id_relate': [],
+    'before_canid': [],
+    'after_canid': [],
     'datalen': [],
     'data': [],
     'flag': []
@@ -28,7 +32,8 @@ training_packet = {
 testing_packet = {
     'timestamp': [],
     'canid': [],
-    'id_relate': [],    
+    'before_canid': [],
+    'after_canid': [],
     'datalen': [],
     'data': [],
     'flag': []
@@ -43,18 +48,16 @@ def read_file(path, filename, packet):
         cnt = 0
         before_timestamp = 0
         before_id = 0
-        zero_time = 0
-        for row in reader:
 
+        for row in reader:
             if len(row) == 0:
                 print(" [-] debugging... line " + str(cnt) + " in  " + filename + " is empty")
 
             elif row[-1] == 'R' or row[-1] == 'T':
-
                 if cnt == 0:
+                    # 첫 번째 timestamp = 0
                     before_timestamp = float(row[0])
 
-                cnt += 1
                 datalen = int(row[2])
 
                 msg = []
@@ -69,11 +72,9 @@ def read_file(path, filename, packet):
                     data += int(msg[idx], 16)
 
                 timestamp = (float(row[0]) - before_timestamp) * 1000000.0
-                if timestamp==0:
-                    zero_time=zero_time+1
-                
+
                 canid = int(row[1], 16)
-                idid = before_id*4096+canid
+                before_canid = before_id
                 before_id = canid
 
                 if row[-1] == 'R':
@@ -85,15 +86,22 @@ def read_file(path, filename, packet):
 
                 packet['timestamp'].append(timestamp)
                 packet['canid'].append(canid)
-                packet['id_relate'].append(idid)
+                packet['before_canid'].append(before_canid)
                 packet['datalen'].append(datalen)
                 packet['data'].append(data)
                 packet['flag'].append(flag)
 
                 before_timestamp = float(row[0])
 
+                if cnt != 0:
+                    packet['after_canid'].append(canid) # 두 번째 줄부터 after_canid 를 추가하면 자동으로 순서가 맞춰짐
+
+                cnt += 1
+
             else:
                 exit("csv read error")
+
+        packet['after_canid'].append(0) # 마지막 메시지의 after_canid 는 0
 
 
 def read_csv_train(car_type, attack_type):
@@ -142,16 +150,6 @@ def statistical_tec(train, valid, test, car, attack):
                        fbeta_score(y_pred=y_hat, y_true=valid['flag'].values, beta=1)])
     scores = np.array(scores)
 
-    plt.plot(tresholds, scores[:, 0], label='$Recall$')
-    plt.plot(tresholds, scores[:, 1], label='$Precision$')
-    plt.plot(tresholds, scores[:, 2], label='$F_1$')
-    plt.ylabel('Score')
-    plt.xlabel('Threshold')
-    plt.legend(loc='best')
-    plt.title(car + " " + attack + " f1 score")
-
-    # plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_f1_score.png"))
-
     final_tresh = tresholds[scores[:, 2].argmax()]
     y_hat_test = (model.logpdf(test.drop('flag', axis=1).values) < final_tresh).astype(int)
 
@@ -162,6 +160,63 @@ def statistical_tec(train, valid, test, car, attack):
     print('F1 Score: {:.4f}%'.format(fbeta_score(test['flag'], y_hat_test, beta=1) * 100))
 
     cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def linSVM_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = svm.SVC(kernel='linear', C=0.1, gamma=0.1)
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def rbfSVM_tec(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = svm.SVC(kernel='rbf', C=10, gamma=10)
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
+    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
+
+
+def gaussian_nb(train, valid, test, car, attack):
+    train_X = valid.drop(['flag'], axis=1)
+    train_Y = valid['flag']
+    test_X = test.drop(['flag'], axis=1)
+    test_Y = test['flag']
+
+    model = GaussianNB()
+    model.fit(train_X, train_Y)
+    preds = model.predict(test_X)
+
+    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
+    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
+    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
+    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
+
+    cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
 
@@ -180,10 +235,6 @@ def decisiontree_tec(train, valid, test, car, attack):
     print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
     print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
     print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
-
-    fig, ax = plt.subplots(figsize=(20, 8))
-    plot_tree(clf, ax=ax, filled=True)
-    plt.savefig(os.path.join(CURRENT_FOLDER, "output", car, attack + "_decision_plot_tree.svg"), format='svg')
 
     cnf_matrix = confusion_matrix(test_Y, preds)
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
@@ -227,32 +278,17 @@ def kNN_tec(train, valid, test, car, attack):
     plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
 
 
-def linSVM_tec(train, valid, test, car, attack):
+def voting_classifier(train, valid, test, car, attack):
     train_X = valid.drop(['flag'], axis=1)
     train_Y = valid['flag']
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    model = svm.SVC(kernel='linear', C=0.1, gamma=0.1)
-    model.fit(train_X, train_Y)
-    preds = model.predict(test_X)
+    kNN = KNeighborsClassifier(n_neighbors=1)
+    RF = RandomForestClassifier(n_estimators=10)
+    DT = DecisionTreeClassifier(max_depth=8, random_state=0)
 
-    print('Accuracy: {:.4f}%'.format(accuracy_score(test_Y, preds) * 100))
-    print('Recall: {:.4f}%'.format(recall_score(test_Y, preds) * 100))
-    print('Precision: {:.4f}%'.format(precision_score(test_Y, preds) * 100))
-    print('F1 score: {:.4f}%'.format(fbeta_score(test_Y, preds, beta=1) * 100))
-
-    cnf_matrix = confusion_matrix(test_Y, preds)
-    plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix', car=car, attack=attack)
-
-
-def rbfSVM_tec(train, valid, test, car, attack):
-    train_X = valid.drop(['flag'], axis=1)
-    train_Y = valid['flag']
-    test_X = test.drop(['flag'], axis=1)
-    test_Y = test['flag']
-
-    model = svm.SVC(kernel='rbf', C=0.1, gamma=0.1)
+    model = VotingClassifier(estimators=[('kNN', kNN), ('RandomForest', RF), ('DecisionTree', DT)], voting='soft', weights=[1.5, 1, 1])
     model.fit(train_X, train_Y)
     preds = model.predict(test_X)
 
@@ -266,22 +302,33 @@ def rbfSVM_tec(train, valid, test, car, attack):
 
 
 def train2test(car, attack):
+    # 노가다 뛰어보니까 after_canid, before_canid 보다 canid 에 가중치를 둔 경우 웬만하면 좋아짐
+    # before_canid, after_canid 만 정규화하고 canid 는 그대로 두거나
+    # canid 에만 *= 0x1000 하고 나머지는 그대로 두거나
+    # 일단 canid 별로 나뉘는 상황은 맞는 것 같음. 셋 다 정규화 때리면 정확도 박살남;
+
     """" training from a file, then testing """
     training_dataset = pd.DataFrame(training_packet)
     training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
-    # timestamp 한정 log 날려봤는데 f score 뚝 떨어짐 ㅋㅋ... 
-    #training_dataset['timestamp'] = training_dataset['timestamp'] + 1    
+        # timestamp 한정 log 날려봤는데 f score 뚝 떨어짐 (동일. fuzzy 는 약간 오르는데 malfunc 는 감소)
+        # training_dataset['timestamp'] = training_dataset['timestamp'] + 1
     training_dataset['datalen'] = np.log(training_dataset['datalen'] + 1)
     training_dataset['data'] = np.log(training_dataset['data'] + 1)
+    # training_dataset['canid'] = np.log(training_dataset['canid'] + 1)
+    training_dataset['before_canid'] = np.log(training_dataset['before_canid'] + 1)
+    training_dataset['after_canid'] = np.log(training_dataset['after_canid'] + 1)
 
     training_normal = training_dataset[training_dataset['flag'] == 0]
     training_abnormal = training_dataset[training_dataset['flag'] == 1]
 
     testing_dataset = pd.DataFrame(testing_packet)
     testing_dataset['timestamp'] = np.log(testing_dataset['timestamp'] + 1)
-    #testing_dataset['timestamp'] = testing_dataset['timestamp']    
+        # testing_dataset['timestamp'] = testing_dataset['timestamp']
     testing_dataset['datalen'] = np.log(testing_dataset['datalen'] + 1)
     testing_dataset['data'] = np.log(testing_dataset['data'] + 1)
+    # testing_dataset['canid'] = np.log(testing_dataset['canid'] + 1)
+    testing_dataset['before_canid'] = np.log(testing_dataset['before_canid'] + 1)
+    testing_dataset['after_canid'] = np.log(testing_dataset['after_canid'] + 1)
 
     testing_normal = testing_dataset[testing_dataset['flag'] == 0]
     testing_abnormal = testing_dataset[testing_dataset['flag'] == 1]
@@ -291,14 +338,14 @@ def train2test(car, attack):
     test = testing_normal.append(testing_abnormal)
 
     ## statistical_tec(train, valid, test, car, attack)
-    ## decisiontree_tec(train, valid, test, car, attack)
+    ## linSVM_tec(train, valid, test, car, attack)
+    ## rbfSVM_tec(train, valid, test, car, attack)
+    ## gaussian_nb(train, valid, test, car, attack)
 
+    # decisiontree_tec(train, valid, test, car, attack)
     # randomforest_tec(train, valid, test, car, attack)
-    kNN_tec(train, valid, test, car, attack)
-
-    # linSVM_tec(train, valid, test, car, attack)
-    # rbfSVM_tec(train, valid, test, car, attack)
-        # 서포트 벡터 머신의 경우 시간이 너무 오래 걸림. 위 SVM 2개는 서버에서 돌려주세요 ㅠㅠ
+    # kNN_tec(train, valid, test, car, attack)
+    voting_classifier(train, valid, test, car, attack)
 
 
 if __name__=='__main__':
@@ -313,6 +360,4 @@ if __name__=='__main__':
             read_csv_test(car, attack)            
             read_csv_train(car, attack)
             train2test(car, attack)
-            #plt.show()
-
             print()

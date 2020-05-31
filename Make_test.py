@@ -19,5 +19,6 @@ def read_csv_kw(car_type, attack_type):
             make_query(path, file)
             break
 
+
 if __name__ == "__main__":
     pass

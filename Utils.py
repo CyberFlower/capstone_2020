@@ -50,8 +50,9 @@ class Message:
         """
         self.packet = {
             'timestamp': [],
+            'before_canid': [],
             'canid': [],
-            'id_relate': [],
+            'after_canid': [],
             'datalen': [],
             'data': [],
             'flag': []
@@ -69,8 +70,6 @@ class Message:
                 break
         
     def read_file(self):
-        """ read csv file
-        no param """
         with open(os.path.join(self.path, self.filename), 'r') as fp:
             reader = csv.reader(fp)
             cnt = 0
@@ -81,14 +80,13 @@ class Message:
                 if row[-1] == 'R' or row[-1] == 'T':
                     if cnt == 0:
                         before_timestamp = float(row[0])
-                    cnt += 1
+
                     datalen = int(row[2])
                     data = 0
-                    # 2019 이용 데이터셋을 제외하고 message packet을 ,로 구분하지 않은 경우가 존재하여 예외처리함 - 동관
-                    # 후에 예외처리가 더 필요할 수 있음
-                    msg=[]
+
+                    msg = []
                     if row[3].count(" "):
-                        msg=row[3].split(" ")
+                        msg = row[3].split(" ")
                     else:
                         msg=row[3:-1]
                     for idx in range(datalen):
@@ -96,12 +94,11 @@ class Message:
                         data += int(msg[idx], 16)
 
                     timestamp = (float(row[0]) - before_timestamp) * 1000000.0
-                    '''if timestamp!=0:
-                        print(timestamp)'''
-                        # 나중에 log 이용 시 차이가 너무 작지 않도록 조정
+
                     canid = int(row[1], 16)
-                    idid = before_id*4096 + canid
-                    before_id=canid
+                    before_canid = before_id
+                    before_id = canid
+
                     if row[-1] == 'R':
                         flag = 0
                     elif row[-1] == 'T':
@@ -109,11 +106,10 @@ class Message:
                     else:
                         print(row[-1])
 
-                    # timestamp, CANID, datalen, data, flag must be saved
-
                     self.packet['timestamp'].append(timestamp)
+                    self.packet['before_canid'].append(before_canid)
+                    # self.packet['after_canid'].append(after_canid)
                     self.packet['canid'].append(canid)
-                    self.packet['id_relate'].append(idid)
                     self.packet['datalen'].append(datalen)
                     self.packet['data'].append(data)
                     self.packet['flag'].append(flag)
@@ -121,9 +117,15 @@ class Message:
 
                     before_timestamp = float(row[0])
 
+                    if cnt != 0:
+                        packet['after_canid'].append(canid)  # 두 번째 줄부터 after_canid 를 추가하면 자동으로 순서가 맞춰짐
+
+                    cnt += 1
+
                 else:
-                    #print("csv read error")
                     exit("csv read error")
+
+            packet['after_canid'].append(0)  # 마지막 메시지의 after_canid 는 0
 
     def get_packet(self):
         return self.packet
@@ -249,7 +251,8 @@ class Message:
         else:
             file_title="rev_id_relate_scatter_"+self.car+"_"+self.attack+".png"
 
-        plt.savefig(os.path.join(self.path,"img",file_title))
+        plt.show()
+        # plt.savefig(os.path.join(self.path,"img",file_title))
 
     def no_log_scatter_graph(self):
         dataset = pd.DataFrame(self.packet)

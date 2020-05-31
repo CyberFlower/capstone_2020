@@ -8,8 +8,8 @@ if __name__=='__main__':
     for car in car_type:
         for attack in attack_type:
             for folder in path_type:
-                print("[+] Start testing "+car+" "+attack)            
-                msg=Message(folder,car,attack)
+                print("[+] Start testing " + car + " " + attack)
+                msg = Message(folder,car,attack)
                 msg.read_file()
                 #msg.study_and_test()
                 #msg.scatter_graph()
