@@ -265,7 +265,7 @@ def kNN_tec(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    model = KNeighborsClassifier(n_neighbors=1)
+    model = KNeighborsClassifier(n_neighbors=5)
     model.fit(train_X, train_Y)
     preds = model.predict(test_X)
 
@@ -344,8 +344,8 @@ def train2test(car, attack):
 
     # decisiontree_tec(train, valid, test, car, attack)
     # randomforest_tec(train, valid, test, car, attack)
-    # kNN_tec(train, valid, test, car, attack)
-    voting_classifier(train, valid, test, car, attack)
+    kNN_tec(train, valid, test, car, attack)
+    # voting_classifier(train, valid, test, car, attack)
 
 
 if __name__=='__main__':
