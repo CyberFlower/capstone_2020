@@ -49,6 +49,7 @@ class Message:
         folder: study_input or test_input (select a folder to your purpose)
         """
         self.packet = {
+            'message': [],
             'timestamp': [],
             'before_canid': [],
             'canid': [],
@@ -78,6 +79,8 @@ class Message:
 
             for row in reader:
                 if row[-1] == 'R' or row[-1] == 'T':
+                    self.packet['message'].append(row)
+
                     if cnt == 0:
                         before_timestamp = float(row[0])
 
@@ -118,19 +121,19 @@ class Message:
                     before_timestamp = float(row[0])
 
                     if cnt != 0:
-                        packet['after_canid'].append(canid)  # 두 번째 줄부터 after_canid 를 추가하면 자동으로 순서가 맞춰짐
+                        self.packet['after_canid'].append(canid)  # 두 번째 줄부터 after_canid 를 추가하면 자동으로 순서가 맞춰짐
 
                     cnt += 1
 
                 else:
                     exit("csv read error")
 
-            packet['after_canid'].append(0)  # 마지막 메시지의 after_canid 는 0
+            self.packet['after_canid'].append(0)  # 마지막 메시지의 after_canid 는 0
 
     def get_packet(self):
         return self.packet
 
-    def write_file(self):
+    def file_copy(self):
         with open(os.path.join(self.path, "copy_"+self.filename), 'w') as fp:
             writer=csv.writer(fp,delimiter=' ')
             for i in range(self.ln):
@@ -373,3 +376,30 @@ class Message:
 
         cnf_matrix = confusion_matrix(test['flag'].values, y_hat_test)
         plot_confusion_matrix(cnf_matrix, classes=['Normal', 'Abnormal'], title='Confusion matrix',car=self.car,attack=self.attack)
+
+    # sorted list A + sorted list B -> sorted list C 
+    def merge_file_by_time(self, other):
+        left=self.packet['message']
+        right=other.packet['message']
+        l=0; r=0
+        res=[]
+        while l<len(left) and r<len(right):
+            if left[l][0]==right[r][0]:
+                print("[-] Time equal error!")
+            if float(left[l][0])<float(right[r][0]):
+                res.append(left[l])
+                l+=1
+            else:
+                res.append(right[r])
+                r+=1
+        while l<len(left):
+            res.append(left[l])
+            l+=1
+        while r<len(right):
+            res.append(right[r])
+            r+=1
+
+        with open(os.path.join(self.path, self.car+"_attack.csv"), 'w') as fp:
+            writer=csv.writer(fp,delimiter=',')
+            for i in range(len(res)):
+                writer.writerow(res[i])

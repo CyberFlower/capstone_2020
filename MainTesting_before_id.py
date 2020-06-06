@@ -350,7 +350,7 @@ def train2test(car, attack):
 
 if __name__=='__main__':
     car_type = ["Sonata", "Soul"]
-    attack_type = ["Fuzzy","Malfunction"]
+    attack_type = ["attack"]
 
     for car in car_type:
         for attack in attack_type:
@@ -361,3 +361,4 @@ if __name__=='__main__':
             read_csv_train(car, attack)
             train2test(car, attack)
             print()
+            plt.show()

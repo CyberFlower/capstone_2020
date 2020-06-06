@@ -5,7 +5,7 @@ if __name__=='__main__':
     attack_type = ["Fuzzy","Malfunction"]
     path_type=["study_input","test_input"]
     
-    for car in car_type:
+    '''for car in car_type:
         for attack in attack_type:
             for folder in path_type:
                 print("[+] Start testing " + car + " " + attack)
@@ -19,23 +19,15 @@ if __name__=='__main__':
                 #msg.scatter_graph_time()
                 msg.scatter_graph_id_relate()    
                 msg.scatter_graph_id_relate(rev=True)                
-                print()
+                print()'''
 
-    '''for car in car_type:
-        for attack in attack_type:
-            print("[+] Start testing "+car+" "+attack)            
-            msg=Message("test_input",car,attack)
-            msg.read_file()
-            packet=msg.get_packet()
-            cnt=0; sz=len(packet['flag'])
-            malfunction_set=set()
-            for i in range(sz):
-                if packet['flag'][i]==1:
-                    xx=str(packet['data'][i])
-                    malfunction_set.add(xx)
-            #print(len(malfunction_set))
-            for attack_messages in malfunction_set:
-                print(attack_messages)'''
+    for car in car_type:
+        for folder in path_type:
+            car1=Message(folder,car,"Fuzzy")
+            car2=Message(folder,car,"Malfunction")
+            car1.read_file()
+            car2.read_file()
+            car1.merge_file_by_time(car2)
 
     
     
