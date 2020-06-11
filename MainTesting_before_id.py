@@ -27,7 +27,8 @@ training_packet = {
     'after_canid': [],
     'datalen': [],
     'data': [],
-    'flag': []
+    'flag': [],
+    # 'before_flag': []
 }
 testing_packet = {
     'timestamp': [],
@@ -36,7 +37,8 @@ testing_packet = {
     'after_canid': [],
     'datalen': [],
     'data': [],
-    'flag': []
+    'flag': [],
+    # 'before_flag': []
 }
 
 
@@ -55,8 +57,8 @@ def read_file(path, filename, packet):
 
             elif row[-1] == 'R' or row[-1] == 'T':
                 if cnt == 0:
-                    # 첫 번째 timestamp = 0
-                    before_timestamp = float(row[0])
+                    before_timestamp = 0
+                    # before_flag = 0
 
                 datalen = int(row[2])
 
@@ -90,8 +92,10 @@ def read_file(path, filename, packet):
                 packet['datalen'].append(datalen)
                 packet['data'].append(data)
                 packet['flag'].append(flag)
+                # packet['before_flag'].append(before_flag)
 
                 before_timestamp = float(row[0])
+                # before_flag = flag
 
                 if cnt != 0:
                     packet['after_canid'].append(canid) # 두 번째 줄부터 after_canid 를 추가하면 자동으로 순서가 맞춰짐
@@ -284,9 +288,9 @@ def voting_classifier(train, valid, test, car, attack):
     test_X = test.drop(['flag'], axis=1)
     test_Y = test['flag']
 
-    kNN = KNeighborsClassifier(n_neighbors=1)
+    kNN = KNeighborsClassifier(n_neighbors=4)
     RF = RandomForestClassifier(n_estimators=10)
-    DT = DecisionTreeClassifier(max_depth=8, random_state=0)
+    DT = DecisionTreeClassifier(max_depth=6, random_state=0)
 
     model = VotingClassifier(estimators=[('kNN', kNN), ('RandomForest', RF), ('DecisionTree', DT)], voting='soft', weights=[1.5, 1, 1])
     model.fit(train_X, train_Y)
@@ -302,19 +306,11 @@ def voting_classifier(train, valid, test, car, attack):
 
 
 def train2test(car, attack):
-    # 노가다 뛰어보니까 after_canid, before_canid 보다 canid 에 가중치를 둔 경우 웬만하면 좋아짐
-    # before_canid, after_canid 만 정규화하고 canid 는 그대로 두거나
-    # canid 에만 *= 0x1000 하고 나머지는 그대로 두거나
-    # 일단 canid 별로 나뉘는 상황은 맞는 것 같음. 셋 다 정규화 때리면 정확도 박살남;
-
     """" training from a file, then testing """
     training_dataset = pd.DataFrame(training_packet)
     training_dataset['timestamp'] = np.log(training_dataset['timestamp'] + 1)
-        # timestamp 한정 log 날려봤는데 f score 뚝 떨어짐 (동일. fuzzy 는 약간 오르는데 malfunc 는 감소)
-        # training_dataset['timestamp'] = training_dataset['timestamp'] + 1
     training_dataset['datalen'] = np.log(training_dataset['datalen'] + 1)
     training_dataset['data'] = np.log(training_dataset['data'] + 1)
-    # training_dataset['canid'] = np.log(training_dataset['canid'] + 1)
     training_dataset['before_canid'] = np.log(training_dataset['before_canid'] + 1)
     training_dataset['after_canid'] = np.log(training_dataset['after_canid'] + 1)
 
@@ -323,10 +319,8 @@ def train2test(car, attack):
 
     testing_dataset = pd.DataFrame(testing_packet)
     testing_dataset['timestamp'] = np.log(testing_dataset['timestamp'] + 1)
-        # testing_dataset['timestamp'] = testing_dataset['timestamp']
     testing_dataset['datalen'] = np.log(testing_dataset['datalen'] + 1)
     testing_dataset['data'] = np.log(testing_dataset['data'] + 1)
-    # testing_dataset['canid'] = np.log(testing_dataset['canid'] + 1)
     testing_dataset['before_canid'] = np.log(testing_dataset['before_canid'] + 1)
     testing_dataset['after_canid'] = np.log(testing_dataset['after_canid'] + 1)
 
@@ -344,8 +338,8 @@ def train2test(car, attack):
 
     # decisiontree_tec(train, valid, test, car, attack)
     # randomforest_tec(train, valid, test, car, attack)
-    kNN_tec(train, valid, test, car, attack)
-    # voting_classifier(train, valid, test, car, attack)
+    # kNN_tec(train, valid, test, car, attack)
+    voting_classifier(train, valid, test, car, attack)
 
 
 if __name__=='__main__':
